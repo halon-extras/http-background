@@ -1,0 +1,36 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "description": "http-background schema",
+    "additionalProperties": false,
+    "properties": {
+        "threads": {
+            "type": "array",
+            "uniqueItems": true,
+            "description": "http-background threads",
+            "items": {
+                "type": "object",
+                "required": [
+                    "id"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "Thread ID"
+                    },
+                    "max_total": {
+                        "type": "number",
+                        "description": "Maximum total concurrent requests",
+                        "default": 1
+                    },
+                    "max_host": {
+                        "type": "number",
+                        "description": "Maximum total concurrent requests per host",
+                        "default": 1
+                    }
+                }
+            }
+        }
+    }
+}

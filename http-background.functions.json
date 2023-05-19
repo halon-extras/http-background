@@ -1,0 +1,22 @@
+[
+    {
+        "name": "http_background",
+        "parameters": {
+            "required": [
+                {
+                    "name": "id",
+                    "type": "string"
+                },
+                {
+                    "name": "url",
+                    "type": "string"
+                }
+            ]
+        },
+        "returnType": "array or none",
+        "detail": "http_background(string $id, string $url, array $options, File|array|string $post): array or none",
+        "value": "http_background($0, $1)",
+        "documentation": "Send HTTP requests from HSL asynchronously (it will suspend the current exeuction thread until done).",
+        "link": "[Full documentation](https://github.com/halon-extras/http-background)"
+    }
+] 

@@ -1,0 +1,15 @@
+{
+	"name": "http-background",
+	"dockerComposeFile": [
+		"docker-compose.yaml"
+	],
+	"workspaceFolder": "/http-background",
+	"service": "halon-smtpd",
+	"overrideCommand": false,
+	"extensions": [
+		"Halon.vscode-halon",
+		"Halon.hsl-linter",
+		"Halon.hsl-debug",
+		"ms-vscode.cpptools"
+	]
+}

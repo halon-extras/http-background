@@ -1,0 +1,48 @@
+version: "5.8"
+servers:
+  - id: default
+    transport: mx
+    phases:
+      eod:
+        hook: default
+transportgroups:
+  - id: default
+    connection:
+      sourceip:
+        ipv6: false
+    retry:
+      count: 30
+      intervals:
+        - interval: 60
+        - interval: 900
+        - interval: 3600
+        - interval: 7200
+        - interval: 10800
+    transports:
+      - id: mx
+        session:
+          tls:
+            mode: dane
+resolver:
+  cache:
+    size: 10000
+scripting:
+  hooks:
+    eod:
+      - id: default
+        data: >
+          $transactionid = $transaction["id"];
+
+          $sender = $transaction["senderaddress"];
+
+          $recipients = $transaction["recipients"];
+
+          $mail = $arguments["mail"];
+
+
+          // Queue message for all recipients
+
+          foreach ($recipients as $recipient)
+              $mail->queue($sender, $recipient["address"], $recipient["transportid"]);
+
+          Accept();

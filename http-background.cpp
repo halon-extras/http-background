@@ -419,6 +419,7 @@ bool Halon_init(HalonInitContext* hic)
 				curl_multi_setopt(cmptr->handle, CURLMOPT_MAX_HOST_CONNECTIONS, strtoul(maxhost, nullptr, 10));
 			auto cm = cmptr.get();
 			cmptr->tid = std::thread([cm]() {
+					pthread_setname_np(pthread_self(), std::string("p/hb/" + id).substr(0, 15).c_str());
 					do {
 					int still_running;
 					CURLMcode mc = curl_multi_perform(cm->handle, &still_running);

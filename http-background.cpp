@@ -5,7 +5,7 @@
 #include <mutex>
 #include <cstring>
 #include <curl/curl.h>
-#include <openssl/evp.h>
+#include <openssl/ssl.h>
 #include <syslog.h>
 #include <memory>
 #include <map>
@@ -22,6 +22,13 @@ struct curlMulti
 
 std::map<std::string, std::unique_ptr<curlMulti>> curlMultis;
 
+struct sslcert
+{
+	X509 *x509 = nullptr;
+	EVP_PKEY *pkey = nullptr;
+	STACK_OF(X509) *chain = nullptr;
+};
+
 struct halon {
 	HalonHSLContext *hhc = nullptr;
 	HalonHSLValue* ret = nullptr;
@@ -31,6 +38,7 @@ struct halon {
 	EVP_ENCODE_CTX *evp = nullptr;
 	FILE *fp = nullptr;
 	curl_off_t max_file_size = 0;
+	sslcert cert;
 };
 
 HALON_EXPORT
@@ -79,6 +87,16 @@ size_t write_callback(char *data, size_t size, size_t nmemb, halon* h)
 			return 0;
 	((std::string*)h->user)->append((const char*)data, size * nmemb);
 	return size * nmemb;
+}
+
+static CURLcode sslctx_function(CURL *curl, void *sslctx, void *param)
+{
+	sslcert* cert = (sslcert*)param;
+	if (SSL_CTX_use_cert_and_key((SSL_CTX*)sslctx, cert->x509, cert->pkey, cert->chain, 1) <= 0)
+		return CURLE_ABORTED_BY_CALLBACK;
+	if (!SSL_CTX_check_private_key((SSL_CTX*)sslctx))
+		return CURLE_ABORTED_BY_CALLBACK;
+	return CURLE_OK;
 }
 
 HALON_EXPORT
@@ -136,6 +154,34 @@ void http_background(HalonHSLContext* hhc, HalonHSLArguments* args, HalonHSLValu
 		HalonHSLValue* e = HalonMTA_hsl_throw(hhc);
 		HalonMTA_hsl_value_set(e, HALONMTA_HSL_TYPE_EXCEPTION, "Bad tls_verify_host value", 0);
 		return;
+	}
+
+	sslcert cert;
+	const HalonHSLValue *hv_tls_client_cert = HalonMTA_hsl_value_array_find(options, "tls_client_cert");
+	if (hv_tls_client_cert)
+	{
+		if (HalonMTA_hsl_value_type(hv_tls_client_cert) != HALONMTA_HSL_TYPE_ARRAY)
+		{
+			HalonHSLValue* e = HalonMTA_hsl_throw(hhc);
+			HalonMTA_hsl_value_set(e, HALONMTA_HSL_TYPE_EXCEPTION, "Bad tls_verify_host value", 0);
+			return;
+		}
+
+		const HalonHSLValue *hv_tls_client_cert_x509 = HalonMTA_hsl_value_array_find(hv_tls_client_cert, "x509");
+		if (!HalonMTA_hsl_value_get(hv_tls_client_cert_x509, HALONMTA_HSL_TYPE_X509, &cert.x509, nullptr))
+		{
+			HalonHSLValue* e = HalonMTA_hsl_throw(hhc);
+			HalonMTA_hsl_value_set(e, HALONMTA_HSL_TYPE_EXCEPTION, "Bad x509 value", 0);
+			return;
+		}
+
+		const HalonHSLValue *hv_tls_client_cert_privatekey = HalonMTA_hsl_value_array_find(hv_tls_client_cert, "privatekey");
+		if (!HalonMTA_hsl_value_get(hv_tls_client_cert_privatekey, HALONMTA_HSL_TYPE_PRIVATEKEY, &cert.pkey, nullptr))
+		{
+			HalonHSLValue* e = HalonMTA_hsl_throw(hhc);
+			HalonMTA_hsl_value_set(e, HALONMTA_HSL_TYPE_EXCEPTION, "Bad privatekey value", 0);
+			return;
+		}
 	}
 
 	long timeout = 0;
@@ -222,6 +268,7 @@ void http_background(HalonHSLContext* hhc, HalonHSLArguments* args, HalonHSLValu
 	h->ret = ret;
 	h->user = (void*)new std::string;
 	h->max_file_size = max_file_size;
+	h->cert = cert;
 
 	CURL *curl = curl_easy_init();
 
@@ -366,6 +413,11 @@ void http_background(HalonHSLContext* hhc, HalonHSLArguments* args, HalonHSLValu
 		curl_easy_setopt(curl, CURLOPT_INTERFACE, sourceip);
 	if (max_file_size)
 		curl_easy_setopt(curl, CURLOPT_MAXFILESIZE_LARGE, max_file_size);
+	if (cert.x509 && cert.pkey)
+	{
+		curl_easy_setopt(curl, CURLOPT_SSL_CTX_DATA, &h->cert);
+		curl_easy_setopt(curl, CURLOPT_SSL_CTX_FUNCTION, *sslctx_function);
+	}
 
 	cm->second->lock.lock();
 	cm->second->curls.push(curl);

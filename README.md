@@ -47,6 +47,9 @@ These functions needs to be [imported](https://docs.halon.io/hsl/structures.html
 - options `array` 
     - tls_verify_peer `boolean` (default `true`)
     - tls_verify_host `boolean` (default `true`)
+    - tls_verify_cert `array`
+        - x509 `X509Resource`
+        - privatekey `PrivateKeyResource`
     - timeout `number` (default no timeout)
     - connect_timeout `number` (default `300`)
     - max_file_size `number` maxmium file size to retrieve (default no limit)

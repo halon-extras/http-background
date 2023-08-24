@@ -27,6 +27,7 @@ struct sslcert
 	X509 *x509 = nullptr;
 	EVP_PKEY *pkey = nullptr;
 	STACK_OF(X509) *chain = nullptr;
+	bool chain_free = false;
 };
 
 struct halon {
@@ -181,6 +182,33 @@ void http_background(HalonHSLContext* hhc, HalonHSLArguments* args, HalonHSLValu
 			HalonHSLValue* e = HalonMTA_hsl_throw(hhc);
 			HalonMTA_hsl_value_set(e, HALONMTA_HSL_TYPE_EXCEPTION, "Bad privatekey value", 0);
 			return;
+		}
+
+		const HalonHSLValue *hv_tls_client_cert_chain = HalonMTA_hsl_value_array_find(hv_tls_client_cert, "chain");
+		if (hv_tls_client_cert_chain)
+		{
+			if (HalonMTA_hsl_value_type(hv_tls_client_cert_chain) != HALONMTA_HSL_TYPE_ARRAY)
+			{
+				HalonHSLValue* e = HalonMTA_hsl_throw(hhc);
+				HalonMTA_hsl_value_set(e, HALONMTA_HSL_TYPE_EXCEPTION, "Bad chain value", 0);
+				return;
+			}
+			cert.chain_free = true;
+			cert.chain = sk_X509_new_null();
+			size_t index = 0;
+			HalonHSLValue *v;
+			while ((v = HalonMTA_hsl_value_array_get(hv_tls_client_cert_chain, index++, nullptr)))
+			{
+				X509* x = nullptr;
+				if (!HalonMTA_hsl_value_get(v, HALONMTA_HSL_TYPE_X509, &x, nullptr))
+				{
+					HalonHSLValue* e = HalonMTA_hsl_throw(hhc);
+					HalonMTA_hsl_value_set(e, HALONMTA_HSL_TYPE_EXCEPTION, "Bad x509 value in chain", 0);
+					sk_X509_free(cert.chain);
+					return;
+				}
+				sk_X509_push(cert.chain, x);
+			}
 		}
 	}
 
@@ -513,6 +541,7 @@ bool Halon_init(HalonInitContext* hic)
 							curl_slist_free_all(h->headers);
 							curl_mime_free(h->mime);
 							EVP_ENCODE_CTX_free(h->evp);
+							if (h->cert.chain_free) sk_X509_free(h->cert.chain);
 							delete h;
 
 							curl_multi_remove_handle(cm->handle, e);

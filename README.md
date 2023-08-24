@@ -50,6 +50,7 @@ These functions needs to be [imported](https://docs.halon.io/hsl/structures.html
     - tls_verify_cert `array` present a client certificate
         - x509 `X509Resource`
         - privatekey `PrivateKeyResource`
+        - chain `array` of `X509Resource`
     - timeout `number` (default no timeout)
     - connect_timeout `number` (default `300`)
     - max_file_size `number` maxmium file size to retrieve (default no limit)

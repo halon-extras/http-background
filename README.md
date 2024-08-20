@@ -59,6 +59,9 @@ These functions needs to be [imported](https://docs.halon.io/hsl/structures.html
     - encoder `string` encoder of the POST data (supported: base64)
     - headers (`array` of `string`) additional headers, default empty array
     - sourceip `string` the sourceip (ipv4 or ipv6)
+    - username `string` a username
+    - password `string` a password
+    - aws_sigv4 `string` aws_sigv4 option (see CURLOPT_AWS_SIGV4)
 - post `File`, `array` or `string`
 
 Type default POST Content-Type header is based on the POST data type

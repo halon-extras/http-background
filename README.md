@@ -47,7 +47,7 @@ These functions needs to be [imported](https://docs.halon.io/hsl/structures.html
 - options `array` 
     - tls_verify_peer `boolean` (default `true`)
     - tls_verify_host `boolean` (default `true`)
-    - tls_verify_cert `array` present a client certificate
+    - tls_client_cert `array` present a client certificate
         - x509 `X509Resource`
         - privatekey `PrivateKeyResource`
         - chain `array` of `X509Resource`

@@ -169,7 +169,7 @@ void http_background(HalonHSLContext* hhc, HalonHSLArguments* args, HalonHSLValu
 		if (HalonMTA_hsl_value_type(hv_tls_client_cert) != HALONMTA_HSL_TYPE_ARRAY)
 		{
 			HalonHSLValue* e = HalonMTA_hsl_throw(hhc);
-			HalonMTA_hsl_value_set(e, HALONMTA_HSL_TYPE_EXCEPTION, "Bad tls_verify_host value", 0);
+			HalonMTA_hsl_value_set(e, HALONMTA_HSL_TYPE_EXCEPTION, "Bad tls_client_cert value", 0);
 			return;
 		}
 

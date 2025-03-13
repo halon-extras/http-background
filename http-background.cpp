@@ -25,7 +25,7 @@ struct curlMulti
        bool quit = false;
 };
 
-std::map<std::string, std::unique_ptr<curlMulti>> curlMultis;
+static std::map<std::string, std::unique_ptr<curlMulti>> curlMultis;
 
 struct sslcert
 {
@@ -66,13 +66,13 @@ void Halon_cleanup()
 	}
 }
 
-size_t read_callback(char *dest, size_t size, size_t nmemb, FILE *fp)
+static size_t read_callback(char *dest, size_t size, size_t nmemb, FILE *fp)
 {
 	size_t x = fread(dest, size, nmemb, fp);
 	return x;
 }
 
-size_t read_callback_evp(char *dest, size_t size, size_t nmemb, halon *h)
+static size_t read_callback_evp(char *dest, size_t size, size_t nmemb, halon *h)
 {
 	unsigned char buf[65524 / 2]; // XXX: large safety margin
 	size_t x = fread(buf, 1, sizeof(buf), h->fp);
@@ -84,7 +84,7 @@ size_t read_callback_evp(char *dest, size_t size, size_t nmemb, halon *h)
 	return destlen;
 }
 
-size_t write_callback(char *data, size_t size, size_t nmemb, halon* h)
+static size_t write_callback(char *data, size_t size, size_t nmemb, halon* h)
 {
 	if (h->user == nullptr)
 		return 0;
@@ -95,7 +95,7 @@ size_t write_callback(char *data, size_t size, size_t nmemb, halon* h)
 	return size * nmemb;
 }
 
-static CURLcode sslctx_function(CURL *curl, void *sslctx, void *param)
+static static CURLcode sslctx_function(CURL *curl, void *sslctx, void *param)
 {
 	sslcert* cert = (sslcert*)param;
 	if (SSL_CTX_use_cert_and_key((SSL_CTX*)sslctx, cert->x509, cert->pkey, cert->chain, 1) <= 0)
@@ -105,8 +105,7 @@ static CURLcode sslctx_function(CURL *curl, void *sslctx, void *param)
 	return CURLE_OK;
 }
 
-HALON_EXPORT
-void http_background(HalonHSLContext* hhc, HalonHSLArguments* args, HalonHSLValue* ret)
+static void http_background(HalonHSLContext* hhc, HalonHSLArguments* args, HalonHSLValue* ret)
 {
 	const char *id = nullptr;
 	HalonHSLValue* id_ = HalonMTA_hsl_argument_get(args, 0);

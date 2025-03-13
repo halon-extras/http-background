@@ -95,7 +95,7 @@ static size_t write_callback(char *data, size_t size, size_t nmemb, halon* h)
 	return size * nmemb;
 }
 
-static static CURLcode sslctx_function(CURL *curl, void *sslctx, void *param)
+static CURLcode sslctx_function(CURL *curl, void *sslctx, void *param)
 {
 	sslcert* cert = (sslcert*)param;
 	if (SSL_CTX_use_cert_and_key((SSL_CTX*)sslctx, cert->x509, cert->pkey, cert->chain, 1) <= 0)

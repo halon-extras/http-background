@@ -18,6 +18,7 @@ RUN yum install -y cmake3 make gcc-c++ rpm-build autoconf openssl-devel
 RUN mkdir /tmp/halon
 RUN cd /tmp/halon \
     && curl -O -L https://github.com/curl/curl/releases/download/curl-7_80_0/curl-7.80.0.tar.gz \
+    && echo "dab997c9b08cb4a636a03f2f7f985eaba33279c1c52692430018fae4a4878dc7 curl-7.80.0.tar.gz" | sha256sum -c \
     && tar -zxvf curl-7.80.0.tar.gz && cd curl-7.80.0 \
     && LD_LIBRARY_PATH=/usr/local/lib64 ./configure --without-ssl --without-ldap \
     && make && make install \

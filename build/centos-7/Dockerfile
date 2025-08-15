@@ -37,11 +37,13 @@ RUN yum install -y cmake3 make gcc-c++ rpm-build
 RUN mkdir /tmp/halon
 RUN cd /tmp/halon \
     && curl -O -L https://www.openssl.org/source/openssl-1.1.1n.tar.gz \
+    && echo "40dceb51a4f6a5275bde0e6bf20ef4b91bfc32ed57c0552e2e8e15463372b17a openssl-1.1.1n.tar.gz" | sha256sum -c \
     && tar -xzvf openssl-1.1.1n.tar.gz && cd openssl-1.1.1n \
     && ./config \
     && make && make install
 RUN cd /tmp/halon \
     && curl -O -L https://github.com/curl/curl/releases/download/curl-7_80_0/curl-7.80.0.tar.gz \
+    && echo "dab997c9b08cb4a636a03f2f7f985eaba33279c1c52692430018fae4a4878dc7 curl-7.80.0.tar.gz" | sha256sum -c \
     && tar -zxvf curl-7.80.0.tar.gz && cd curl-7.80.0 \
     && LD_LIBRARY_PATH=/usr/local/lib64 ./configure --without-ssl --without-ldap \
     && make && make install \

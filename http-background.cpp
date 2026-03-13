@@ -232,7 +232,7 @@ static void http_background(HalonHSLContext* hhc, HalonHSLArguments* args, Halon
 
 	long connect_timeout = 0;
 	const HalonHSLValue *hv_connect_timeout = HalonMTA_hsl_value_array_find(options, "connect_timeout");
-	if (hv_timeout)
+	if (hv_connect_timeout)
 	{
 		double connect_timeout_;
 		if (!HalonMTA_hsl_value_get(hv_connect_timeout, HALONMTA_HSL_TYPE_NUMBER, &connect_timeout_, nullptr))

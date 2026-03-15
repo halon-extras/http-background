@@ -516,8 +516,6 @@ bool Halon_init(HalonInitContext* hic)
 		HalonConfig* thread;
 		while ((thread = HalonMTA_config_array_get(threads, l++)))
 		{
-			auto x = std::make_shared<curlMulti>();
-
 			const char* id = HalonMTA_config_string_get(HalonMTA_config_object_get(thread, "id"), nullptr);
 			if (!id)
 			{

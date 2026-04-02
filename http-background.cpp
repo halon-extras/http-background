@@ -322,6 +322,20 @@ static void http_background(HalonHSLContext* hhc, HalonHSLArguments* args, Halon
 		return;
 	}
 
+	long redirects = 0;
+	const HalonHSLValue *hv_redirects = HalonMTA_hsl_value_array_find(options, "redirects");
+	if (hv_redirects)
+	{
+		double redirects_;
+		if (!HalonMTA_hsl_value_get(hv_redirects, HALONMTA_HSL_TYPE_NUMBER, &redirects_, nullptr))
+		{
+			HalonHSLValue* e = HalonMTA_hsl_throw(hhc);
+			HalonMTA_hsl_value_set(e, HALONMTA_HSL_TYPE_EXCEPTION, "Bad redirects value", 0);
+			return;
+		}
+		redirects = (long)redirects_;
+	}
+
 	auto h = new halon;
 	h->hhc = hhc;
 	h->ret = ret;
@@ -482,6 +496,11 @@ static void http_background(HalonHSLContext* hhc, HalonHSLArguments* args, Halon
 	{
 		curl_easy_setopt(curl, CURLOPT_SSL_CTX_DATA, &h->cert);
 		curl_easy_setopt(curl, CURLOPT_SSL_CTX_FUNCTION, *sslctx_function);
+	}
+	if (redirects != 0)
+	{
+		curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+		curl_easy_setopt(curl, CURLOPT_MAXREDIRS, &redirects);
 	}
 
 	cm->second->lock.lock();

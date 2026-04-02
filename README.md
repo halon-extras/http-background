@@ -62,6 +62,7 @@ These functions needs to be [imported](https://docs.halon.io/hsl/structures.html
     - username `string` a username
     - password `string` a password
     - aws_sigv4 `string` aws_sigv4 option (see CURLOPT_AWS_SIGV4), for example ``aws:amz:us-east-1:s3``. Use this option together with ``username`` and ``password``.
+    - redirects `number` number of redirects to follow
 - post `File`, `array` or `string`
 
 Type default POST Content-Type header is based on the POST data type

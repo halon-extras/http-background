@@ -1,18 +1,25 @@
-version: "5.8"
-servers:
-  - id: default
-    listeners:
-      - port: 25
-        address: 127.0.0.1
 environment:
-  uuid:
-    version: 4
   controlsocket:
+    chmod: '0660'
     group: staff
-    chmod: "0660"
   privdrop:
+    group: halon
     user: halon
-    group: staff
-  umask: "0027"
   rlimit:
     nofile: 70000
+  umask: '0027'
+  uuid:
+    version: 4
+plugins:
+- config:
+    threads:
+    - id: default
+      max_host: 20
+      max_total: 100
+  id: http-background
+servers:
+- id: default
+  listeners:
+  - address: 127.0.0.1
+    port: 25
+version: '5.8'

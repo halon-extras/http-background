@@ -4,6 +4,13 @@ servers:
     listeners:
       - port: 25
         address: 127.0.0.1
+plugins:
+  - id: http-background
+    config:
+      threads:
+        - id: default
+          max_total: 100
+          max_host: 20
 environment:
   uuid:
     version: 4

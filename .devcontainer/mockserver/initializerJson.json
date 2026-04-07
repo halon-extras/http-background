@@ -1,0 +1,16 @@
+[
+  {
+    "id": "default",
+    "priority": -10,
+    "httpRequest": {
+      "method": "POST",
+      "path": "/",
+      "headers": {
+        "Content-Type": ["application/json"]
+      }
+    },
+    "httpResponse": {
+      "statusCode": 204
+    }
+  }
+]

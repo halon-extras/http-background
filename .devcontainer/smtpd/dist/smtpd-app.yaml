@@ -1,48 +1,63 @@
-version: "5.8"
-servers:
-  - id: default
-    transport: mx
-    phases:
-      eod:
-        hook: default
-transportgroups:
-  - id: default
-    connection:
-      sourceip:
-        ipv6: false
-    retry:
-      count: 30
-      intervals:
-        - interval: 60
-        - interval: 900
-        - interval: 3600
-        - interval: 7200
-        - interval: 10800
-    transports:
-      - id: mx
-        session:
-          tls:
-            mode: dane
 resolver:
   cache:
     size: 10000
 scripting:
+  files:
+  - data: |
+      import { http_background } from "extras://http-background";
+
+      echo http_background(
+          "default",
+          "http://mockserver",
+          ["headers" => ["Content-Type: application/json"]],
+          json_encode(["foo" => "bar"])
+      );
+    id: test.hsl
   hooks:
     eod:
-      - id: default
-        data: >
-          $transactionid = $transaction["id"];
+    - data: |
+        $transactionid = $transaction["id"];
+        $sender = $transaction["senderaddress"];
+        $recipients = $transaction["recipients"];
+        $mail = $arguments["mail"];
 
-          $sender = $transaction["senderaddress"];
+        // Queue message for all recipients
+        foreach ($recipients as $recipient)
+            $mail->queue($sender, $recipient["address"], $recipient["transportid"]);
 
-          $recipients = $transaction["recipients"];
+        Accept();
+      id: default
+    postdelivery: |
+      import { http_background } from "extras://http-background";
 
-          $mail = $arguments["mail"];
-
-
-          // Queue message for all recipients
-
-          foreach ($recipients as $recipient)
-              $mail->queue($sender, $recipient["address"], $recipient["transportid"]);
-
-          Accept();
+      echo http_background(
+          "default",
+          "http://mockserver",
+          ["headers" => ["Content-Type: application/json"]],
+          json_encode(["foo" => "bar"])
+      );
+servers:
+- id: default
+  phases:
+    eod:
+      hook: default
+  transport: mx
+transportgroups:
+- connection:
+    sourceip:
+      ipv6: false
+  id: default
+  retry:
+    count: 30
+    intervals:
+    - interval: 60
+    - interval: 900
+    - interval: 3600
+    - interval: 7200
+    - interval: 10800
+  transports:
+  - id: mx
+    session:
+      tls:
+        mode: dane
+version: '5.8'

@@ -11,5 +11,13 @@ services:
       - ../:/http-background
       - ./smtpd/dist:/etc/halon
       - halon-spool:/var/spool/halon
+  mockserver:
+    image: mockserver/mockserver:5.14.0
+    environment:
+      MOCKSERVER_PROPERTY_FILE: /config/mockserver.properties
+    volumes:
+      - type: bind
+        source: ./mockserver
+        target: /config
 volumes:
   halon-spool:

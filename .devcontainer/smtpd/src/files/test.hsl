@@ -1,0 +1,8 @@
+import { http_background } from "extras://http-background";
+
+echo http_background(
+    "default",
+    "http://mockserver",
+    ["headers" => ["Content-Type: application/json"]],
+    json_encode(["foo" => "bar"])
+);

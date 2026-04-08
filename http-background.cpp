@@ -619,7 +619,7 @@ bool Halon_init(HalonInitContext* hic)
 								HalonMTA_hsl_value_set(v, HALONMTA_HSL_TYPE_NUMBER, &status_, 0);
 								HalonMTA_hsl_value_array_add(h->ret, &k, &v);
 								HalonMTA_hsl_value_set(k, HALONMTA_HSL_TYPE_STRING, "content", 0);
-								HalonMTA_hsl_value_set(v, HALONMTA_HSL_TYPE_STRING, ((std::string*)h->user)->c_str(), 0);
+								HalonMTA_hsl_value_set(v, HALONMTA_HSL_TYPE_STRING, ((std::string*)h->user)->c_str(), ((std::string*)h->user)->size());
 							}
 
 							HalonMTA_hsl_schedule(h->hhc);

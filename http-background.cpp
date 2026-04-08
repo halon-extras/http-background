@@ -42,6 +42,8 @@ struct halon {
 	curl_mime *mime = nullptr;
 	void *user = nullptr;
 	EVP_ENCODE_CTX *evp = nullptr;
+	bool evp_done = false;
+	std::string evp_buffer;
 	FILE *fp = nullptr;
 	curl_off_t max_file_size = 0;
 	sslcert cert;
@@ -74,14 +76,43 @@ static size_t read_callback(char *dest, size_t size, size_t nmemb, FILE *fp)
 
 static size_t read_callback_evp(char *dest, size_t size, size_t nmemb, halon *h)
 {
-	unsigned char buf[65524 / 2]; // XXX: large safety margin
+	if (!h->evp_buffer.empty())
+	{
+		size_t bytesToCopy = std::min(size * nmemb, h->evp_buffer.size());
+		memcpy(dest, h->evp_buffer.c_str(), bytesToCopy);
+		h->evp_buffer.erase(0, bytesToCopy);
+		return bytesToCopy;
+	}
+
+	if (h->evp_done)
+	{
+		return 0;
+	}
+
+	unsigned char buf[1024 * 32];
+	unsigned char buf_out[sizeof(buf) * 2];
 	size_t x = fread(buf, 1, sizeof(buf), h->fp);
-	int destlen;
+
+	int buf_out_len = 0;
 	if (x == 0)
-		EVP_EncodeFinal(h->evp, (unsigned char*)dest, &destlen);
+	{
+		EVP_EncodeFinal(h->evp, (unsigned char *)buf_out, &buf_out_len);
+		h->evp_done = true;
+	}
 	else
-		EVP_EncodeUpdate(h->evp, (unsigned char*)dest, &destlen, buf, (int)x);
-	return destlen;
+	{
+		EVP_EncodeUpdate(h->evp, (unsigned char *)buf_out, &buf_out_len, buf, (int)x);
+	}
+
+	size_t bytesToCopy = std::min(size * nmemb, (size_t)buf_out_len);
+	memcpy(dest, buf_out, bytesToCopy);
+
+	if ((size_t)buf_out_len > bytesToCopy)
+	{
+		h->evp_buffer.append((const char *)buf_out + bytesToCopy, buf_out_len - bytesToCopy);
+	}
+
+	return bytesToCopy;
 }
 
 static size_t write_callback(char *data, size_t size, size_t nmemb, halon* h)

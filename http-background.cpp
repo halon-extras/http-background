@@ -459,6 +459,7 @@ static void http_background(HalonHSLContext* hhc, HalonHSLArguments* args, Halon
 				{
 					HalonHSLValue* e = HalonMTA_hsl_throw(hhc);
 					HalonMTA_hsl_value_set(e, HALONMTA_HSL_TYPE_EXCEPTION, "Bad data type", 0);
+					return;
 				}
 
 				const HalonHSLValue *hv_field_type = HalonMTA_hsl_value_array_find(v, "type");

@@ -532,7 +532,7 @@ static void http_background(HalonHSLContext* hhc, HalonHSLArguments* args, Halon
 	if (redirects != 0)
 	{
 		curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
-		curl_easy_setopt(curl, CURLOPT_MAXREDIRS, &redirects);
+		curl_easy_setopt(curl, CURLOPT_MAXREDIRS, redirects);
 	}
 
 	cm->second->lock.lock();

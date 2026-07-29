@@ -574,7 +574,7 @@ bool Halon_init(HalonInitContext* hic)
 				return false;
 			}
 			const char* maxtotal = HalonMTA_config_string_get(HalonMTA_config_object_get(thread, "max_total"), nullptr);
-			const char* maxhost = HalonMTA_config_string_get(HalonMTA_config_object_get(thread, "max_hosts"), nullptr);
+			const char* maxhost = HalonMTA_config_string_get(HalonMTA_config_object_get(thread, "max_host"), nullptr);
 
 			std::unique_ptr<curlMulti> cmptr = std::make_unique<curlMulti>();
 			cmptr->id = id;

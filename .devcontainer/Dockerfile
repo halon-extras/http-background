@@ -22,6 +22,6 @@ RUN echo -n "UBU2404" > /OSRELEASE.txt
 
 RUN mkdir /var/log/halon && chown halon:halon /var/log/halon
 
-RUN apt-get install -y supervisor
+RUN apt-get update && apt-get install -y supervisor
 COPY ./supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 CMD ["/usr/bin/supervisord"]

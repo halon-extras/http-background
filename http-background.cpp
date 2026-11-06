@@ -90,18 +90,24 @@ static size_t read_callback_evp(char *dest, size_t size, size_t nmemb, halon *h)
 
 	unsigned char buf[1024 * 32];
 	unsigned char buf_out[sizeof(buf) * 2];
-	size_t x = fread(buf, 1, sizeof(buf), h->fp);
 
+	// EVP_EncodeUpdate() holds back input until it has a full 48-byte line, so it may
+	// produce no output. Returning 0 would tell curl the body is complete, so keep
+	// reading until there is output or the file has ended (EVP_EncodeFinal() called).
 	int buf_out_len = 0;
-	if (x == 0)
+	do
 	{
-		EVP_EncodeFinal(h->evp, (unsigned char *)buf_out, &buf_out_len);
-		h->evp_done = true;
-	}
-	else
-	{
-		EVP_EncodeUpdate(h->evp, (unsigned char *)buf_out, &buf_out_len, buf, (int)x);
-	}
+		size_t x = fread(buf, 1, sizeof(buf), h->fp);
+		if (x == 0)
+		{
+			EVP_EncodeFinal(h->evp, (unsigned char *)buf_out, &buf_out_len);
+			h->evp_done = true;
+		}
+		else
+		{
+			EVP_EncodeUpdate(h->evp, (unsigned char *)buf_out, &buf_out_len, buf, (int)x);
+		}
+	} while (buf_out_len == 0 && !h->evp_done);
 
 	size_t bytesToCopy = std::min(size * nmemb, (size_t)buf_out_len);
 	memcpy(dest, buf_out, bytesToCopy);

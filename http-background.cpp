@@ -39,6 +39,7 @@ struct sslcert
 struct halon {
 	HalonHSLContext *hhc = nullptr;
 	HalonHSLValue* ret = nullptr;
+	CURL *curl = nullptr;
 	struct curl_slist *headers = nullptr;
 	curl_mime *mime = nullptr;
 	void *user = nullptr;
@@ -48,6 +49,17 @@ struct halon {
 	FILE *fp = nullptr;
 	curl_off_t max_file_size = 0;
 	sslcert cert;
+
+	~halon()
+	{
+		delete (std::string*)user;
+		curl_slist_free_all(headers);
+		curl_mime_free(mime);
+		EVP_ENCODE_CTX_free(evp);
+		if (cert.chain_free)
+			sk_X509_free(cert.chain);
+		curl_easy_cleanup(curl);
+	}
 };
 
 HALON_EXPORT
@@ -197,7 +209,11 @@ static void http_background(HalonHSLContext* hhc, HalonHSLArguments* args, Halon
 		return;
 	}
 
-	sslcert cert;
+	// Owns everything allocated for the request, so every early return frees it;
+	// released to the worker thread once the request is queued
+	auto h = std::make_unique<halon>();
+
+	sslcert& cert = h->cert;
 	const HalonHSLValue *hv_tls_client_cert = HalonMTA_hsl_value_array_find(options, "tls_client_cert");
 	if (hv_tls_client_cert)
 	{
@@ -244,7 +260,6 @@ static void http_background(HalonHSLContext* hhc, HalonHSLArguments* args, Halon
 				{
 					HalonHSLValue* e = HalonMTA_hsl_throw(hhc);
 					HalonMTA_hsl_value_set(e, HALONMTA_HSL_TYPE_EXCEPTION, "Bad x509 value in chain", 0);
-					sk_X509_free(cert.chain);
 					return;
 				}
 				sk_X509_push(cert.chain, x);
@@ -372,14 +387,12 @@ static void http_background(HalonHSLContext* hhc, HalonHSLArguments* args, Halon
 		redirects = (long)redirects_;
 	}
 
-	auto h = new halon;
 	h->hhc = hhc;
 	h->ret = ret;
 	h->user = (void*)new std::string;
 	h->max_file_size = max_file_size;
-	h->cert = cert;
 
-	CURL *curl = curl_easy_init();
+	CURL *curl = h->curl = curl_easy_init();
 
 	bool hasContentType = false;
 	const HalonHSLValue *hv_headers = HalonMTA_hsl_value_array_find(options, "headers");
@@ -418,7 +431,7 @@ static void http_background(HalonHSLContext* hhc, HalonHSLArguments* args, Halon
 				h->evp = EVP_ENCODE_CTX_new();
 				EVP_EncodeInit(h->evp);
 				curl_easy_setopt(curl, CURLOPT_READFUNCTION, ::read_callback_evp);
-				curl_easy_setopt(curl, CURLOPT_READDATA, (void*)h);
+				curl_easy_setopt(curl, CURLOPT_READDATA, (void*)h.get());
 			}
 			else
 			{
@@ -501,9 +514,9 @@ static void http_background(HalonHSLContext* hhc, HalonHSLArguments* args, Halon
 	}
 
 	curl_easy_setopt(curl, CURLOPT_URL, url);
-	curl_easy_setopt(curl, CURLOPT_PRIVATE, (void*)h);
+	curl_easy_setopt(curl, CURLOPT_PRIVATE, (void*)h.get());
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ::write_callback);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, h);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, h.get());
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, h->headers);
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
 
@@ -542,6 +555,8 @@ static void http_background(HalonHSLContext* hhc, HalonHSLArguments* args, Halon
 		curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
 		curl_easy_setopt(curl, CURLOPT_MAXREDIRS, redirects);
 	}
+
+	h.release(); // deleted by the worker thread when the transfer completes
 
 	cm->second->lock.lock();
 	cm->second->curls.push(curl);
@@ -645,15 +660,8 @@ bool Halon_init(HalonInitContext* hic)
 							}
 
 							HalonMTA_hsl_schedule(h->hhc);
-							delete (std::string*)h->user;
-							curl_slist_free_all(h->headers);
-							curl_mime_free(h->mime);
-							EVP_ENCODE_CTX_free(h->evp);
-							if (h->cert.chain_free) sk_X509_free(h->cert.chain);
-							delete h;
-
 							curl_multi_remove_handle(cm->handle, e);
-							curl_easy_cleanup(e);
+							delete h; // also cleans up the easy handle (e)
 						}
 					} while (m);
 

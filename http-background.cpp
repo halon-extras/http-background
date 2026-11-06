@@ -534,7 +534,14 @@ static void http_background(HalonHSLContext* hhc, HalonHSLArguments* args, Halon
 	if (proxy)
 		curl_easy_setopt(curl, CURLOPT_PROXY, proxy);
 	if (method)
-		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, method);
+	{
+		// CUSTOMREQUEST only changes the method name; curl would still wait for the
+		// body a HEAD response announces but never sends, so use a real HEAD request
+		if (strcmp(method, "HEAD") == 0)
+			curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
+		else
+			curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, method);
+	}
 	if (sourceip)
 		curl_easy_setopt(curl, CURLOPT_INTERFACE, sourceip);
 	if (username)

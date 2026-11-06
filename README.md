@@ -1,6 +1,6 @@
 # HTTP background request plugin
 
-Send HTTP requests from HSL asynchronously as it suspends the current exeuction thread until done.
+Send HTTP requests from HSL asynchronously as it suspends the current execution thread until done.
 
 ## Installation
 
@@ -36,7 +36,7 @@ plugins:
 
 ## Exported functions
 
-These functions needs to be [imported](https://docs.halon.io/hsl/structures.html#import) from the `extras://http-background` module path.
+These functions need to be [imported](https://docs.halon.io/hsl/structures.html#import) from the `extras://http-background` module path.
 
 ### http_background(id, url [, options [, post]])
 
@@ -53,7 +53,7 @@ These functions needs to be [imported](https://docs.halon.io/hsl/structures.html
         - chain `array` of `X509Resource`
     - timeout `number` in seconds (default no timeout)
     - connect_timeout `number` in seconds (default `300`)
-    - max_file_size `number` maxmium file size to retrieve (default no limit)
+    - max_file_size `number` maximum file size to retrieve (default no limit)
     - method `string` the request method (default depending on payload)
     - proxy `string` custom proxy server
     - encoder `string` encoder of the POST data (supported: base64)
@@ -65,13 +65,13 @@ These functions needs to be [imported](https://docs.halon.io/hsl/structures.html
     - redirects `number` number of redirects to follow
 - post `File`, `array` or `string`
 
-Type default POST Content-Type header is based on the POST data type
+The default POST Content-Type header is based on the POST data type
 
   - `File`: `application/octet-stream`
   - `array`: `multipart/form-data`
   - `string`: `application/x-www-form-urlencoded`
 
-If post is an `array` the format should be associative `array` where the key (`string`) is the field name
+If post is an `array` the format should be an associative `array` where the key (`string`) is the field name
 
   - data `File` or `string` content of the field
   - type `string` content-type of the field
@@ -80,7 +80,7 @@ If post is an `array` the format should be associative `array` where the key (`s
 
 **Returns**
 
-An associative array with a `status` and `content` key (if the HTTP request was submitted with a response code) or a `error` key (if an error occurred).
+An associative array with a `status` and `content` key (if the HTTP request was submitted with a response code) or an `error` key (if an error occurred).
 
 **Example**
 

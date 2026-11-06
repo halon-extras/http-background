@@ -9,6 +9,7 @@
 #include <syslog.h>
 #include <memory>
 #include <map>
+#include <atomic>
 
 // Halon > 6.1 is linked against libcurl with this feature
 #ifndef CURLOPT_AWS_SIGV4
@@ -22,7 +23,7 @@ struct curlMulti
        CURLM* handle;
        std::thread tid;
        std::queue<CURL*> curls;
-       bool quit = false;
+       std::atomic<bool> quit{false};
 };
 
 static std::map<std::string, std::unique_ptr<curlMulti>> curlMultis;
@@ -60,9 +61,7 @@ void Halon_cleanup()
 {
 	for (auto & cm : curlMultis)
 	{
-		cm.second->lock.lock();
 		cm.second->quit = true;
-		cm.second->lock.unlock();
 		curl_multi_wakeup(cm.second->handle);
 		cm.second->tid.join();
 	}

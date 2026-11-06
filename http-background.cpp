@@ -571,6 +571,8 @@ bool Halon_init(HalonInitContext* hic)
 	auto threads = HalonMTA_config_object_get(cfg, "threads");
 	if (threads)
 	{
+		// Create every entry before starting any thread: returning false while
+		// threads run would destroy joinable std::threads (std::terminate)
 		size_t l = 0;
 		HalonConfig* thread;
 		while ((thread = HalonMTA_config_array_get(threads, l++)))
@@ -579,6 +581,13 @@ bool Halon_init(HalonInitContext* hic)
 			if (!id)
 			{
 				syslog(LOG_CRIT, "No threads.id");
+				curlMultis.clear();
+				return false;
+			}
+			if (curlMultis.find(id) != curlMultis.end())
+			{
+				syslog(LOG_CRIT, "Duplicate threads.id: %s", id);
+				curlMultis.clear();
 				return false;
 			}
 			const char* maxtotal = HalonMTA_config_string_get(HalonMTA_config_object_get(thread, "max_total"), nullptr);
@@ -591,8 +600,13 @@ bool Halon_init(HalonInitContext* hic)
 				curl_multi_setopt(cmptr->handle, CURLMOPT_MAX_TOTAL_CONNECTIONS, strtoul(maxtotal, nullptr, 10));
 			if (maxhost)
 				curl_multi_setopt(cmptr->handle, CURLMOPT_MAX_HOST_CONNECTIONS, strtoul(maxhost, nullptr, 10));
-			auto cm = cmptr.get();
-			cmptr->tid = std::thread([cm] () {
+			curlMultis.insert(std::make_pair(id, std::move(cmptr)));
+		}
+
+		for (auto & entry : curlMultis)
+		{
+			auto cm = entry.second.get();
+			cm->tid = std::thread([cm] () {
 					pthread_setname_np(pthread_self(), std::string(std::string("p/hb/") + cm->id).substr(0, 15).c_str());
 					do {
 					int still_running;
@@ -656,7 +670,6 @@ bool Halon_init(HalonInitContext* hic)
 					cm->lock.unlock();
 				} while (!cm->quit);
 			});
-			curlMultis.insert(std::make_pair(id, std::move(cmptr)));
 		}
 	}
 
